@@ -56,5 +56,8 @@ sed -i "s/%%PURGER_CRON_HOUR%%/$PURGER_EXECUTION_HOUR/g"	/etc/cron.d/root
 sed -i "s/%%PURGER_CRON_MIN%%/$PURGER_EXECUTION_MIN/g"		/etc/cron.d/root
 sed -i "s/%%PURGER_RETN_DAYS%%/$PURGER_DATA_RETENTION_DAYS/g"	/etc/cron.d/root
 
+# replace params in supervisor config files
+sed -i "s/%%EXPORT_DELY_DAYS%%/$EXPORTER_DELAY_DAYS/g"		/etc/supervisor/conf.d/exporter.conf
+
 # Start supervisord and services
 /usr/bin/supervisord -n -c /etc/supervisord.conf
