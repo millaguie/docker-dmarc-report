@@ -3,10 +3,10 @@
 
 IMAGE_TAG	= docker.io/jorgegv/dmarc-report
 # the version number for this repo and the generated image
-IMAGE_VERSION	= 1.2.6
+IMAGE_VERSION	= 1.2.7
 
 # software versions to include
-PARSER_VERSION	= 1.2.5
+PARSER_VERSION	= 1.2.6
 VIEWER_VERSION	= 1.2.4
 
 default:
