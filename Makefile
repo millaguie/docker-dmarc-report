@@ -3,7 +3,7 @@
 
 IMAGE_TAG	= ghcr.io/millaguie/dmarc-report
 # the version number for this repo and the generated image
-IMAGE_VERSION	= 1.2.9
+IMAGE_VERSION	= 1.2.10
 
 # software versions to include
 PARSER_VERSION	= 1.2.7
