@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # change according to alpine and php release
-PHP_VERSION=81
+PHP_VERSION=85
 
 # Display PHP error's or not
 if [[ "$ERRORS" != "1" ]] ; then
@@ -11,7 +11,8 @@ fi
 
 # Disable opcache?
 if [[ -v NO_OPCACHE ]]; then
-    sed -i -e "s/zend_extension=opcache.so/;zend_extension=opcache.so/g" /etc/php${PHP_VERSION}/conf.d/00_opcache.ini
+    # opcache is built into PHP 8.5, so it can only be turned off with an ini setting
+    echo 'opcache.enable = 0' > /etc/php${PHP_VERSION}/conf.d/zz-no-opcache.ini
 fi
 
 # Tweak nginx to match the workers to cpu's
