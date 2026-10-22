@@ -1,4 +1,4 @@
-# docker-dmarc-report ![Docker Build](https://github.com/gutmensch/docker-dmarc-report/actions/workflows/docker-image.yml/badge.svg) [![Docker Pulls](https://img.shields.io/docker/pulls/gutmensch/dmarc-report.svg)](https://registry.hub.docker.com/u/gutmensch/dmarc-report/)
+# docker-dmarc-report ![Docker Build](https://github.com/millaguie/docker-dmarc-report/actions/workflows/docker-image.yml/badge.svg)
 
 This image is intended to combine a dmarc report parser (see https://github.com/techsneeze/dmarcts-report-parser by TechSneeze.com and John Bieling) with a report viewer (see https://github.com/techsneeze/dmarcts-report-viewer/ by the same people) into a runnable docker image / microservice.
 
@@ -20,8 +20,8 @@ It fetches dmarc report mails regularly from an IMAP server, stores them into a 
 1. Access port 80 on the container (or 443) or put it behind a reverse proxy to view reports
 
 ```bash
-docker pull gutmensch/dmarc-report
-docker run -e ... -ti gutmensch/dmarc-report
+docker pull ghcr.io/millaguie/dmarc-report
+docker run -e ... -ti ghcr.io/millaguie/dmarc-report
 ```
 
 New dmarc reports will be fetched every 15 minutes past the hour, every hour. Therefore it can take up to one hour for the first report to be fetched.

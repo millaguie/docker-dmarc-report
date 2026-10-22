@@ -1,7 +1,7 @@
 .SILENT:
 .PHONY: build push
 
-IMAGE_TAG	= docker.io/jorgegv/dmarc-report
+IMAGE_TAG	= ghcr.io/millaguie/dmarc-report
 # the version number for this repo and the generated image
 IMAGE_VERSION	= 1.2.9
 
@@ -22,6 +22,6 @@ build:	## Build docker image
 	docker image tag "$(IMAGE_TAG):$(IMAGE_VERSION)" "$(IMAGE_TAG):latest"
 
 
-push:	## Push docker image to Docker hub
+push:	## Push docker image to GitHub Container Registry
 	docker image push "$(IMAGE_TAG):$(IMAGE_VERSION)"
 	docker image push "$(IMAGE_TAG):latest"

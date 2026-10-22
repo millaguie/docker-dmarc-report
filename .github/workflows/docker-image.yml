@@ -3,52 +3,75 @@ name: Docker Image CI
 on:
   push:
     branches:
-      - master
+      - main
     tags:
       - "v*"
   pull_request:
     branches:
-      - master
+      - main
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository_owner }}/dmarc-report
 
 jobs:
   build-and-release:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v7
+
+      # The Makefile is the single place where versions are set
+      - name: Read versions from Makefile
+        id: versions
+        run: |
+          for var in IMAGE_VERSION PARSER_VERSION VIEWER_VERSION; do
+            value=$(awk -v v="$var" '$1 == v { print $3 }' Makefile)
+            test -n "$value" || { echo "$var not found in Makefile"; exit 1; }
+            echo "${var,,}=$value" >> "$GITHUB_OUTPUT"
+          done
 
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
+        uses: docker/setup-qemu-action@v4
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@v4
 
       - name: Docker meta
         id: meta
-        uses: docker/metadata-action@v4
+        uses: docker/metadata-action@v6
         with:
-          images: gutmensch/dmarc-report
-          flavor: latest=true
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
-            type=ref,event=branch
-            type=ref,event=pr
+            type=raw,value=${{ steps.versions.outputs.image_version }},enable={{is_default_branch}}
+            type=raw,value=latest,enable={{is_default_branch}}
             type=semver,pattern={{version}}
+            type=sha
+            type=ref,event=pr
 
-      - name: Login to DockerHub
-        if: github.ref_type == 'tag'
-        uses: docker/login-action@v2
+      - name: Login to GitHub Container Registry
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v4
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push
-        uses: docker/build-push-action@v4
+        uses: docker/build-push-action@v7
         with:
           context: .
-          platforms: linux/amd64, linux/arm64
+          platforms: linux/amd64,linux/arm64
           file: Dockerfile
-          push: ${{ github.ref_type == 'tag' }}
-          tags: |
-            ${{ steps.meta.outputs.tags }}
-            gutmensch/dmarc-report:latest
+          build-args: |
+            PARSER_VERSION=${{ steps.versions.outputs.parser_version }}
+            VIEWER_VERSION=${{ steps.versions.outputs.viewer_version }}
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
