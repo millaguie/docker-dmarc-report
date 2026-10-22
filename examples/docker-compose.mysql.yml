@@ -1,6 +1,6 @@
 services:
   dmarc-report:
-    image: "jorgegv/dmarc-report:latest"
+    image: "ghcr.io/millaguie/dmarc-report:latest"
     hostname: dmarc-report
     container_name: dmarc-report
     restart: always

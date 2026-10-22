@@ -1,4 +1,4 @@
-ARG UPSTREAM_IMAGE=trafex/php-nginx:2.6.0
+ARG UPSTREAM_IMAGE=trafex/php-nginx:3.12.0
 FROM $UPSTREAM_IMAGE
 
 # these two come from the Makefile
@@ -8,7 +8,10 @@ ARG VIEWER_VERSION
 LABEL maintainer="Jorge Gonzalez <j.g.villalonga@gmail.com>"
 
 ENV REPORT_PARSER_SOURCE="https://github.com/jorgegv/dmarcts-report-parser/archive/refs/tags/$PARSER_VERSION.zip" \
-  REPORT_VIEWER_SOURCE="https://github.com/jorgegv/dmarcts-report-viewer/archive/refs/tags/$VIEWER_VERSION.zip"
+  REPORT_VIEWER_SOURCE="https://github.com/jorgegv/dmarcts-report-viewer/archive/refs/tags/$VIEWER_VERSION.zip" \
+  # mariadb-connector-c 3.4 refuses servers without TLS; this restores the
+  # old fallback to plain connections. Set to 0 to enforce TLS verification.
+  MARIADB_TLS_DISABLE_PEER_VERIFICATION=1
 
 USER root
 
@@ -35,10 +38,13 @@ RUN set -e -x \
   openssl \
   openssl-dev \
   perl-dev \
+  perl-io-socket-ssl \
+  perl-net-ssleay \
   perl-utils \
-  php81-pdo \
-  php81-pdo_mysql \
-  php81-pdo_pgsql \
+  'php85>=8.5.12' \
+  php85-pdo \
+  php85-pdo_mysql \
+  php85-pdo_pgsql \
   tzdata \
   wget \
   && wget -4 --no-check-certificate -O parser.zip $REPORT_PARSER_SOURCE \
@@ -48,14 +54,13 @@ RUN set -e -x \
   && unzip viewer.zip && cp -av dmarcts-report-viewer-$VIEWER_VERSION/* /var/www/viewer/ \
   && rm -vf viewer.zip && rm -rvf dmarcts-report-viewer-$VIEWER_VERSION \
   && sed -i "1s/^/body { font-family: Sans-Serif; }\n/" /var/www/viewer/default.css \
-  && sed -i 's%.*listen [::]:8080 default_server;%        listen [::]:80 default_server;%g' /etc/nginx/nginx.conf \
-  && sed -i 's%.*listen 8080 default_server;%        listen 80 default_server;%g' /etc/nginx/nginx.conf \
-  && sed -i 's%.*root /var/www/html;%        root /var/www/viewer;%g' /etc/nginx/nginx.conf \
-  && sed -i 's/.*index index.php index.html;/        index dmarcts-report-viewer.php;/g' /etc/nginx/nginx.conf \
+  && sed -i 's%.*listen \[::\]:8080 default_server;%        listen [::]:80 default_server;%g' /etc/nginx/conf.d/default.conf \
+  && sed -i 's%.*listen 8080 default_server;%        listen 80 default_server;%g' /etc/nginx/conf.d/default.conf \
+  && sed -i 's%.*root /var/www/html;%        root /var/www/viewer;%g' /etc/nginx/conf.d/default.conf \
+  && sed -i 's/.*index index.php index.html;/        index dmarcts-report-viewer.php;/g' /etc/nginx/conf.d/default.conf \
   && sed -i 's%files = /etc/supervisor.d/\*.ini%files = /etc/supervisor/conf.d/*.conf%g' /etc/supervisord.conf \
   && (echo y;echo o conf allow_installing_outdated_dists yes;echo o conf prerequisites_policy follow;echo o conf commit)|cpan \
   && for i in \
-  IO::Socket::SSL \
   CPAN \
   CPAN::DistnameInfo \
   File::MimeInfo \
@@ -83,6 +88,10 @@ RUN set -e -x \
   Net::Prometheus \
   Plack \
   ; do cpan install $i; done \
+  # cpan does not stop on a failed module, so check that every module loads
+  && perl -e 'for (@ARGV) { eval "require $_; 1" or die "missing perl module $_\n" }' \
+  IO::Socket::SSL Mail::IMAPClient Mail::Mbox::MessageParser MIME::Parser XML::Simple \
+  DBI DBD::mysql DBD::Pg PerlIO::gzip Modern::Perl DateTime Net::Prometheus Plack \
   && apk del mariadb-dev expat-dev openssl-dev perl-dev g++ cmake make musl-obstack-dev libpq-dev
 
 HEALTHCHECK --interval=1m --timeout=3s CMD curl --silent --fail http://127.0.0.1:80/fpm-ping
