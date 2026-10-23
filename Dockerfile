@@ -58,6 +58,7 @@ RUN set -e -x \
   && sed -i 's%.*listen 8080 default_server;%        listen 80 default_server;%g' /etc/nginx/conf.d/default.conf \
   && sed -i 's%.*root /var/www/html;%        root /var/www/viewer;%g' /etc/nginx/conf.d/default.conf \
   && sed -i 's/.*index index.php index.html;/        index dmarcts-report-viewer.php;/g' /etc/nginx/conf.d/default.conf \
+  && sed -i 's/^\( *\)allow 127.0.0.1;/\1allow 127.0.0.1;\n\1allow ::1;/' /etc/nginx/conf.d/default.conf \
   && sed -i 's%files = /etc/supervisor.d/\*.ini%files = /etc/supervisor/conf.d/*.conf%g' /etc/supervisord.conf \
   && (echo y;echo o conf allow_installing_outdated_dists yes;echo o conf prerequisites_policy follow;echo o conf commit)|cpan \
   && for i in \
